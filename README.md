@@ -8,11 +8,11 @@ usage: puzzle height width letters hint [ hint ... ]
     
 eg. to solve a puzzle grid like this
 
-  o e t h i
-  s n d c r
-  a o r o c
-  f e k e s
-  m l v o h
+    o e t h i
+    s n d c r
+    a o r o c
+    f e k e s
+    m l v o h
 
 You'd enter...
     
