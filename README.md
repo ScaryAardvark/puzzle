@@ -2,9 +2,11 @@
 A program to solve "WordBrain" puzzle word grids
 
 usage: puzzle height width letters hint [ hint ... ]
+    
     height & width are the dimensions of the grid
     letters are the letters that form the grid in left-to-right, top-to-bottom order
     hint is the word hint, either a number describing the word length, a full word or a partial word right padded with spaces
+    hints must add up the the grid size as must the number of letters
     
 eg. to solve a puzzle grid like this
 
