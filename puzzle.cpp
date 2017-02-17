@@ -46,7 +46,7 @@ public:
 	{
 		letters.display();
 
-		std::list< found > f;
+		std::deque< found > f;
 
 		internalSearch( letters, f, 0 );
 
@@ -54,7 +54,7 @@ public:
 	}
 	
 private:
-	void internalSearch( grid const & letters, std::list< found > const & f, std::size_t depth )
+	void internalSearch( grid const & letters, std::deque< found > const & f, std::size_t depth )
 	{
 		if ( depth >= _hints.size() )
 			return;
@@ -103,7 +103,7 @@ private:
 		return true;
 	}
 
-	void addSolution( std::list< found > const & f, found const & last )
+	void addSolution( std::deque< found > const & f, found const & last )
 	{
 		std::stringstream ss;
 		for ( auto const & fp : f )
@@ -134,7 +134,7 @@ private:
 		}
 	}
 
-	void search( grid const & letters, std::size_t pos, wordpath path, std::string word, std::list< found > const & f, std::size_t depth )
+	void search( grid const & letters, std::size_t pos, wordpath path, std::string word, std::deque< found > const & f, std::size_t depth )
 	{
 //		++_count;
 		path.set( pos );
@@ -167,7 +167,7 @@ private:
 				}
 				else
 				{
-					std::list< found > newfound( f );
+					std::deque< found > newfound( f );
 					newfound.emplace_back( word, letters, path );
 
 					internalSearch( newgrid, newfound, depth + 1 );
