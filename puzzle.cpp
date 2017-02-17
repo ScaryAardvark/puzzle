@@ -13,101 +13,26 @@
 #include <bitset>
 #include <tbb\tbb.h>
 
+#include "wordcache.hpp"
+#include "wordhint.hpp"
+#include "wordpath.hpp"
+#include "grid.hpp"
+
 using namespace tbb;
 
-#define MAX_BITS 64
-
-typedef std::bitset< MAX_BITS > wordpath;
-typedef std::tuple< std::size_t, std::string, std::string > hint;
-typedef std::tuple< std::string, std::string, wordpath > found;
-
-
-class wordcache
-{
-public:
-	wordcache( std::string const & file, std::vector< hint > const & hints, std::string const & excludefile = "exclude.txt" )
-	{
-		std::string word;
-
-		std::set< std::size_t > sizes;
-		for ( auto const & h : hints )
-			sizes.insert( std::get< 0 >( h ) );
-
-		std::set< std::string > excluded;
-
-		{
-			std::fstream f( excludefile );
-			while( f >> word )
-			{
-				std::transform( word.begin(), word.end(), word.begin(), ::tolower );
-
-				excluded.insert( std::move( word ) );
-			}
-		}
-
-		for ( auto const & h : hints )
-		{
-			if ( std::get< 0 >( h ) == std::get< 1 >( h ).size() )
-				excluded.insert( std::get< 1 >( h ) );
-		}
-
-		std::fstream f( file );
-		while( f >> word )
-		{
-			if ( sizes.find( word.size() ) == sizes.end() )
-				continue;
-
-			std::transform( word.begin(), word.end(), word.begin(), ::tolower );
-
-			if ( excluded.find( word ) != excluded.end() )
-			{
-				std::cout << "Excluding \"" << word << "\"" << std::endl;
-				continue;
-			}
-
-			_words.push_back( word );
-		}
-
-		std::sort( _words.begin(), _words.end() );
-	}
-
-	inline std::size_t size() const { return _words.size(); }
-	
-	bool isWord( std::string const & word ) const
-	{
-		return std::binary_search( _words.begin(), _words.end(), word );
-	}
-
-	bool canBeginWith( std::string const & word ) const
-	{
-		auto it = std::upper_bound( _words.begin(), _words.end(), word );
-
-		if ( it == _words.end() )
-			return false;
-
-		return std::strncmp( it->c_str(), word.c_str(), word.size() ) == 0;
-	}
-
-private:
-	std::vector< std::string >  _words;
-};
+typedef std::tuple< std::string, grid, wordpath > found;
 
 class puzzle
 {
 public:
-	puzzle( std::size_t my, std::size_t mx, std::vector< hint > const & hints, wordcache const & words, bool verbose ) :
-		maxy( my ),
-		maxx( mx ),
+	puzzle( std::vector< wordhint > const & hints, wordcache const & words, bool verbose ) :
 		_hints( hints ),
 		_words( words ),
 		_verbose( verbose )
 	{
 	}
 
-	std::size_t const maxy;
-	std::size_t const maxx;
-
-	std::vector< hint > const & _hints;
+	std::vector< wordhint > const & _hints;
 	wordcache const & _words;
 
 	bool _verbose;
@@ -117,9 +42,9 @@ public:
 
 	std::atomic< std::size_t > _count;
 
-	void search( std::string const & letters )
+	void search( grid const & letters )
 	{
-		display( letters );
+		letters.display();
 
 		std::list< found > f;
 
@@ -129,17 +54,7 @@ public:
 	}
 	
 private:
-	inline std::size_t loc( std::size_t y, std::size_t x ) const throw()
-	{
-		return ( y * maxx ) + x;
-	}
-	
-	inline char at( std::string const & letters, std::size_t y, std::size_t x ) const
-	{
-		return letters[ loc( y, x ) ];
-	}
-
-	void internalSearch( std::string const & letters, std::list< found > const & f, std::size_t depth )
+	void internalSearch( grid const & letters, std::list< found > const & f, std::size_t depth )
 	{
 		if ( depth >= _hints.size() )
 			return;
@@ -148,79 +63,44 @@ private:
 		if ( !std::get< 1 >( _hints[ depth ] ).empty() )
 			firstchar = std::get< 1 >( _hints[ depth ] )[ 0 ];
 #ifdef _DEBUG
-		for ( std::size_t y = 0 ; y < maxy ; ++y )
+		for ( std::size_t pos = 0 ; pos < letters.size() ; ++pos )
 		{
-			for ( std::size_t x = 0 ; x < maxx ; ++x )
-			{
 #else
-		tbb::parallel_for< std::size_t >( 0, maxy, [firstchar, depth, &f, &letters, this]( std::size_t y )
+		tbb::parallel_for< std::size_t >( 0, letters.size(), [firstchar, depth, &f, &letters, this]( std::size_t pos )
 		{
-			tbb::parallel_for< std::size_t >( 0, maxx, [firstchar, depth, &f, &letters, y, this]( std::size_t x )
-			{
 #endif
-				auto thischar = at( letters, y, x );
+			auto thischar = letters[ pos ];
 
-				if ( thischar != ' ' && ( firstchar == 0 || ( firstchar != 0 && thischar == firstchar ) ) )
-				{
-					std::string word;
-					wordpath path;
+			if ( thischar != ' ' && ( firstchar == 0 || ( firstchar != 0 && thischar == firstchar ) ) )
+			{
+				std::string word;
+				wordpath path;
 
-					search( letters, y, x, path, word, f, depth );
-				}
-#ifdef _DEBUG
+				search( letters, pos, path, word, f, depth );
 			}
+#ifdef _DEBUG
 		}
 #else
-			} );
 		} );
 #endif
 	}
 
-	std::string remove( std::string letters, wordpath const & path )
+
+	inline bool isValidLocation( grid const & letters, std::size_t pos, wordpath const & path, char current_char ) const 
 	{
-		std::set< std::size_t > xs;
-
-		for ( std::size_t p = 0 ; p < letters.size() ; ++p )
-		{
-			if ( path.test( p ) )
-			{
-				letters[ p ] = ' ';
-				xs.insert( p % maxx );
-			}
-		}
-
-		for ( auto const & x : xs )
-		{
-			level( letters, x );
-		}
-
-		return letters;
-	}
-
-	void level( std::string & letters, std::size_t x )
-	{
-		bool modified = false;
-
-		for ( std::size_t y = 1 ; y < maxy ; ++y )
-		{
-			if ( at( letters, y, x ) == ' ' &&
-				 at( letters, y - 1, x ) != ' ' )
-			{
-				std::swap( letters[ loc( y, x ) ], letters[ loc( y - 1, x ) ] );
-				modified = true;
-			}
-		}
-
-		if ( modified )
-			level( letters, x );
-	}
-
-	inline bool isValidLocation( std::string const & letters, std::size_t pos, wordpath const & path ) const 
-	{
-		if ( letters[ pos ] == ' ' )
+		// have we already been here
+		if ( path.test( pos ) == true )	
 			return false;
 
-		return path.test( pos ) == false;
+		char proposed_char = letters[ pos ];
+
+		if ( proposed_char == ' ' )
+			return false;
+
+		if ( !_words.isValidCharPairing( current_char, proposed_char ) )
+			return false;
+
+		return true;
 	}
 
 	void addSolution( std::list< found > const & f, found const & last )
@@ -233,10 +113,9 @@ private:
 
 		auto dsp = [ this ]( found const & f ) {
 			std::cout << " : " << std::get< 0 >( f ) << " = " << std::endl;
-			display( std::get< 1 >( f ), std::get< 2 >( f ) );
+			std::get< 1 >( f ).display( std::get< 2 >( f ) );
 			std::cout << std::endl;
 		};
-
 
 		auto iret = _solutions.insert( ss.str() );
 		if ( iret.second )
@@ -255,18 +134,17 @@ private:
 		}
 	}
 
-	void search( std::string const & letters, std::size_t y, std::size_t x, wordpath path, std::string word, std::list< found > const & f, std::size_t depth )
+	void search( grid const & letters, std::size_t pos, wordpath path, std::string word, std::list< found > const & f, std::size_t depth )
 	{
 //		++_count;
-		std::size_t pl( loc( y, x ) );
-		
-		path.set( pl );
+		path.set( pos );
 
-		char newchar = letters[ pl ];
+		char newchar = letters[ pos ];
+
 		word += newchar;
 
 #ifdef _DEBUG
-		std::cout << "word = \"" << word << "\"" << std::endl;
+		std::cout << "pos = " << pos << ", word = \"" << word << "\"" << std::endl;
 #endif
 
 		auto hint = _hints[ depth ];
@@ -281,11 +159,9 @@ private:
 				if ( backwards )
 					std::reverse( word.begin(), word.end() );
 
-				std::string newletters = remove( letters, path );
+				grid newgrid = letters.remove( path );
 
-				std::size_t nonspace = newletters.find_first_not_of( " " );
-
-				if ( nonspace == std::string::npos )
+				if ( newgrid.empty() )
 				{
 					addSolution( f, found( word, letters, path ) );
 				}
@@ -294,7 +170,7 @@ private:
 					std::list< found > newfound( f );
 					newfound.emplace_back( word, letters, path );
 
-					internalSearch( newletters, newfound, depth + 1 );
+					internalSearch( newgrid, newfound, depth + 1 );
 				}
 			}
 		}
@@ -304,58 +180,68 @@ private:
 			if ( ( word_at_this_depth.empty() && _words.canBeginWith( word ) ) ||
 				( !word_at_this_depth.empty() && std::strncmp( word_at_this_depth.c_str(), word.c_str(), min( word_at_this_depth.size(), word.size() ) ) == 0 ) )
 			{
-				if ( y > 0 )
+				std::size_t newpos;
+
+				if ( pos >= letters.width() )	// y > 0
 				{
-					if ( x > 0 )
+					if ( ( pos % letters.width() ) > 0 )
 					{
-						if ( isValidLocation( letters, loc( y - 1, x - 1 ), path ) )
-							search( letters, y - 1, x - 1, path, word, f, depth );
+						newpos = pos - letters.width() - 1;
+						if ( isValidLocation( letters, newpos, path, newchar ) )
+							search( letters, newpos, path, word, f, depth );
 					}
 
-					if ( isValidLocation( letters, loc( y - 1, x ), path ) )
-						search( letters, y - 1, x, path, word, f, depth );
+					newpos = pos - letters.width();
+					if ( isValidLocation( letters, newpos, path, newchar ) )
+						search( letters, newpos, path, word, f, depth );
 
-					if ( x < ( maxx - 1 ) )
+					if ( ( pos % letters.width() ) < ( letters.width() - 1 ) )
 					{
-						if ( isValidLocation( letters, loc( y - 1, x + 1 ), path ) )
-							search( letters, y - 1, x + 1, path, word, f, depth );
+						newpos = pos - letters.width() + 1;
+						if ( isValidLocation( letters, newpos, path, newchar ) )
+							search( letters, newpos, path, word, f, depth );
 					}
 				}
 
-				if ( x > 0 )
+				if ( ( pos % letters.width() ) > 0 )
 				{
-					if ( isValidLocation( letters, loc( y, x - 1 ), path ) )
-						search( letters, y, x - 1, path, word, f, depth );
+					newpos = pos - 1;
+					if ( isValidLocation( letters, newpos, path, newchar ) )
+						search( letters, newpos, path, word, f, depth );
 				}
 
-				if ( x < ( maxx - 1 ) )
+				if ( ( pos % letters.width() ) < ( letters.width() - 1 ) )
 				{
-					if ( isValidLocation( letters, loc( y, x + 1 ), path ) )
-						search( letters, y, x + 1, path, word, f, depth );
+					newpos = pos + 1;
+					if ( isValidLocation( letters, newpos, path, newchar ) )
+						search( letters, newpos, path, word, f, depth );
 				}
 
-				if ( y < ( maxy - 1 ) )
+				if ( ( pos / letters.width() ) < ( letters.height() - 1 ) )
 				{
-					if ( x > 0 )
+					if ( ( pos % letters.width() ) > 0 )
 					{
-						if ( isValidLocation( letters, loc( y + 1, x - 1 ), path ) )
-						search( letters, y + 1, x - 1, path, word, f, depth );
+						newpos = pos + letters.width() - 1;
+						if ( isValidLocation( letters, newpos, path, newchar ) )
+							search( letters, newpos, path, word, f, depth );
 					}
 
-					if ( isValidLocation( letters, loc( y + 1, x ), path ) )
-						search( letters, y + 1, x, path, word, f, depth );
+					newpos = pos + letters.width();
+					if ( isValidLocation( letters, newpos, path, newchar ) )
+						search( letters, newpos, path, word, f, depth );
 
-					if ( x < ( maxx - 1 ) )
+					if ( ( pos % letters.width() ) < ( letters.width() - 1 ) )
 					{
-						if ( isValidLocation( letters, loc( y + 1, x + 1 ), path ) )
-							search( letters, y + 1, x + 1, path, word, f, depth );
+						newpos = pos + letters.width() + 1;
+						if ( isValidLocation( letters, newpos, path, newchar ) )
+							search( letters, newpos, path, word, f, depth );
 					}
 				}
 			}
 		}
 	}
 
-	bool isMatch( hint const & hint, std::string const & word, bool backwards ) const
+	bool isMatch( wordhint const & hint, std::string const & word, bool backwards ) const
 	{
 		auto const & wsatd = std::get< 0 >( hint );
 		auto const & watd = std::get< 1 >( hint );
@@ -372,38 +258,6 @@ private:
 
 		return _words.isWord( word );
 	}
-
-	void display( std::string const & letters ) const
-	{
-		for ( std::size_t y = 0 ; y < maxy ; ++y )
-		{
-			for ( std::size_t x = 0 ; x < maxx ; ++x )
-			{
-				std::cout << letters[ (y * maxx) + x ] << " ";
-			}
-			std::cout << std::endl;
-		}
-	}
-
-	void display( std::string const & letters, wordpath const & path ) const
-	{
-		for ( std::size_t y = 0 ; y < maxy ; ++y )
-		{
-			for ( std::size_t x = 0 ; x < maxx ; ++x )
-			{
-				std::size_t pos = loc( y, x );
-
-				if ( path.test( pos ) )
-					std::cout << (char)::toupper( letters[ pos ] );
-				else
-					std::cout << letters[ pos ];
-				
-				std::cout << " ";
-			}
-			std::cout << std::endl;
-		}
-	}
-
 };
 
 int main( int c, char *v[] )
@@ -438,7 +292,7 @@ int main( int c, char *v[] )
 		exit( 1 );
 	}
 
-	std::vector< hint > hints;
+	std::vector< wordhint > hints;
 
 	{
 		for ( std::size_t s = 3 ; s < args.size() ; ++s )
@@ -475,7 +329,7 @@ int main( int c, char *v[] )
 		std::size_t numspaces = letters.size() - numletters;
 
 		std::size_t sumsizes = std::accumulate( hints.begin(), hints.end(), std::size_t( 0 ),
-			[]( std::size_t a, hint const & b )
+			[]( std::size_t a, wordhint const & b )
 			{
 				return a + std::get< 0 >( b );
 			}
@@ -492,7 +346,7 @@ int main( int c, char *v[] )
 		}
 	}
 
-	wordcache words( "words.txt", hints );
+	wordcache words( "words.txt", hints, letters );
 
 	std::cout << "loaded " << words.size() << " words" << std::endl;
 
@@ -511,7 +365,7 @@ int main( int c, char *v[] )
 	}
 	std::cout << std::endl;
 
-	puzzle p( height, width, hints, words, verbose );
+	puzzle p( hints, words, verbose );
 
-	p.search( letters );
+	p.search( grid( height, width, letters ) );
 }
