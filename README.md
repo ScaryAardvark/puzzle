@@ -30,5 +30,9 @@ Notice how the word is space-padded to fill it out to the right sized word. spac
 if you know a complete word then you'd simply type the whole word out as a hint, i.e.
 
     $ puzzle 5 5 oethisndcraorocfekesmlvoh 4 4 shovel 6 5
-    
+
+If you know the solution doesn't contain a particular word then you can create a file called "exclude.txt" in which you can enter the words you know don't work, one per line.
+*Don't forget though, once you've found your solution to a puzzle, make sure you clear out the exclude.txt file for the puzzle.*
+
+
 Good Puzzling!!! :o)
