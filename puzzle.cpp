@@ -11,7 +11,7 @@
 #include <list>
 #include <tuple>
 #include <bitset>
-#include <tbb\tbb.h>
+#include <tbb/tbb.h>
 
 #include "wordcache.hpp"
 #include "wordhint.hpp"
@@ -178,7 +178,7 @@ private:
 		{
 			auto const & word_at_this_depth = std::get< 1 >( hint );
 			if ( ( word_at_this_depth.empty() && _words.canBeginWith( word ) ) ||
-				( !word_at_this_depth.empty() && std::strncmp( word_at_this_depth.c_str(), word.c_str(), min( word_at_this_depth.size(), word.size() ) ) == 0 ) )
+				( !word_at_this_depth.empty() && std::strncmp( word_at_this_depth.c_str(), word.c_str(), std::min( word_at_this_depth.size(), word.size() ) ) == 0 ) )
 			{
 				std::size_t newpos;
 
