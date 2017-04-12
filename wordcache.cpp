@@ -1,13 +1,11 @@
 #include <iostream>
-#include <cstring>
 #include <fstream>
 #include <set>
 #include <algorithm>
 #include <list>
-
+#include <cstring>
 
 #include "wordcache.hpp"
-
 
 wordcache::wordcache( std::string const & file, std::vector< wordhint > const & hints, std::string const & letters, std::string const & excludefile )
 {

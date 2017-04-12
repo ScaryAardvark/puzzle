@@ -17,7 +17,7 @@ public:
 	grid remove( wordpath const & path ) const throw();
 
 	void display() const throw();
-	void display( wordpath const & path ) const throw();
+	void display( std::string const & word,  wordpath const & path ) const throw();
 
 	bool empty() const throw();
 
