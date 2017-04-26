@@ -51,6 +51,12 @@ int main( int c, char *v[] )
     std::size_t width( std::atoi( args[ 1 ].c_str() ) );
     std::string letters( args[ 2 ] );
 
+    if ( (height * width) > MAX_BITS )
+    {
+        std::cerr << "Sorry, you need to recompile with MAX_BITS increased to " << ( height * width ) << std::endl;
+        exit( 1 );
+    }
+
     if ( letters.size() != ( height * width ) )
     {
         std::cerr << v[ 0 ] << ": letter count (" << letters.size() << ") doesn't match grid size (" << height << "x" << width << ")" << std::endl;

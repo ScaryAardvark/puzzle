@@ -1,7 +1,9 @@
 #include <iostream>
+#include <cassert>
 #include <set>
 #include <memory>
 #include <cstring>
+#include <bitset>
 
 #include "grid.hpp"
 
@@ -13,11 +15,11 @@ grid::grid( std::size_t h, std::size_t w, std::string letters ) :
 {
 }
 
-
 grid grid::remove( wordpath const & path ) const throw()
 {
-	char col[ 64 ];
-	std::memset( col, 0, _w );
+    // use a bitset to hold which columns we need to process
+    // for moving characters down when letters are removed
+    std::bitset< MAX_BITS > col_modified;
 
 	std::string new_l( _l );
 
@@ -26,7 +28,7 @@ grid grid::remove( wordpath const & path ) const throw()
 		if ( path.test( p ) )
 		{
 			new_l[ p ] = ' ';
-			col[ p % _w ] = 1;
+			col_modified.set( p % _w );
 		}
 	}
 
@@ -35,7 +37,7 @@ grid grid::remove( wordpath const & path ) const throw()
 
 	for ( std::size_t c = 0 ; c < _w ; ++c )
 	{
-		if ( col[ c ] == 0 )
+		if ( col_modified.test( c ) == 0 )
 			continue;
 
 		do {
@@ -49,7 +51,7 @@ grid grid::remove( wordpath const & path ) const throw()
 				if ( *lower == ' ' &&
 					 *upper != ' ' )
 				{
-					std::swap( new_l[ pos ], new_l[ pos - _w ] );
+					std::swap( *upper, *lower );
 					modified = true;
 				}
 			}
