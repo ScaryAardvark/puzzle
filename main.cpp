@@ -19,6 +19,33 @@
 #include "grid.hpp"
 #include "puzzle.hpp"
 
+namespace
+{
+    bool wellFormedHint( std::string const & word ) throw()
+    {
+        if ( word.empty() )
+            return false;
+
+        auto first_nonspace = word.find_first_not_of( " " );
+
+        if ( first_nonspace == std::string::npos )
+            return false;    // word is all space
+
+        auto first_space = word.find( ' ' );
+
+        if ( first_space == std::string::npos )
+            return true;    // no spaces, but letters..
+
+        if ( first_space < first_nonspace )
+            return false;    // spaces have to be after characters
+
+        if ( word.substr( first_space + 1 ).find_first_not_of( " " ) != std::string::npos )
+            return false;    // non space found after spaces
+
+        return true;
+    }
+}
+
 int main( int c, char *v[] )
 {
     std::vector< std::string > args;
@@ -77,7 +104,7 @@ int main( int c, char *v[] )
                     exit( 1 );
                 }
 
-                if ( !puzzle::wellFormedHint( args[ s ] ) )
+                if ( !wellFormedHint( args[ s ] ) )
                 {
                     std::cerr << v[ 0 ] << ": hint \"" << args[ s ] << "\" is badly formed" << std::endl;
                     exit( 1 );
@@ -144,7 +171,7 @@ int main( int c, char *v[] )
     }
     std::cout << std::endl;
 
-    puzzle p( hints, words, verbose );
+    puzzle p( words, verbose );
 
-    p.search( grid( height, width, letters ) );
+    p.search( grid( height, width, letters ), hints );
 }

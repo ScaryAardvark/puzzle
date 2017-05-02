@@ -7,7 +7,7 @@
 
 #include "grid.hpp"
 
-grid::grid( std::size_t h, std::size_t w, std::string letters ) :
+grid::grid( std::size_t h, std::size_t w, std::string const & letters ) :
 	_h( h ),
 	_w( w ),
 	_s( h * w ),
@@ -17,9 +17,9 @@ grid::grid( std::size_t h, std::size_t w, std::string letters ) :
 
 grid grid::remove( wordpath const & path ) const throw()
 {
-    // use a bitset to hold which columns we need to process
-    // for moving characters down when letters are removed
-    std::bitset< MAX_BITS > col_modified;
+	// use a bitset to hold which columns we need to process
+	// for moving characters down when letters are removed
+	std::bitset< MAX_BITS > col_modified;
 
 	std::string new_l( _l );
 
@@ -62,7 +62,7 @@ grid grid::remove( wordpath const & path ) const throw()
 }
 
 
-void grid::display( ) const throw()
+void grid::display() const throw()
 {
 	for ( std::size_t p = 0 ; p < _s ; ++p )
 	{
@@ -74,7 +74,7 @@ void grid::display( ) const throw()
 	std::cout << std::endl;
 }
 
-void grid::display( std::string const & word,  wordpath const & path ) const throw()
+void grid::display( std::string const & word, wordpath const & path ) const throw()
 {
 	std::cout << word << " = " << std::endl;
 

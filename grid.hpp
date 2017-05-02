@@ -6,7 +6,7 @@
 class grid
 {
 public:
-	grid( std::size_t h, std::size_t w, std::string letters );
+	grid( std::size_t h, std::size_t w, std::string const & letters );
 
 	inline std::size_t height() const  throw() { return _h; }
 	inline std::size_t width() const  throw() { return _w; }
