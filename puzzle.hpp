@@ -37,7 +37,7 @@ private:
 
     void search( grid const & letters, std::size_t pos, wordpath path, std::string word, std::deque< found > const & f, wordhints::const_iterator const & hint ) const throw();
 
-    bool isMatch( wordhint const & hint, std::string const & word, bool backwards ) const throw();
+    bool isMatch( wordhint const & hint, std::string const & word, bool & backwards ) const throw();
 
     wordcache const &                   _words;
     bool                                _verbose;

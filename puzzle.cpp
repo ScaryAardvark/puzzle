@@ -194,7 +194,7 @@ void puzzle::search( grid const & letters, std::size_t pos, wordpath path, std::
 	}
 }
 
-bool puzzle::isMatch( wordhint const & hint, std::string const & word, bool backwards ) const throw()
+bool puzzle::isMatch( wordhint const & hint, std::string const & word, bool & backwards ) const throw()
 {
 	auto const & wsatd = std::get< 0 >( hint );
 	auto const & watd = std::get< 1 >( hint );
