@@ -1,1 +1,1 @@
-./puzzle 8 8 aeedolrsktapeeiecgcynousibecerrolkekuhttdpaetcpeebramcanepabpupl 'k   ' 5 8 6 7 4 4 6 5 8 7
+./build/puzzle 8 8 kwgeltlalrhlffapercpeecnostaerarcnrashnaueimteneabiligatoecdscnb 7 4 3 5 7 8 6 7 6 4 4 3
