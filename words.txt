@@ -22282,11 +22282,7 @@ darkening
 darkens
 darker
 darkest
-darkey
-darkeys
 darkhaired
-darkie
-darkies
 darking
 darkish
 darkle
@@ -73556,8 +73552,6 @@ racetracks
 raceway
 raceways
 rachets
-rachitic
-rachitis
 racial
 racialism
 racialist
@@ -81557,9 +81551,6 @@ scotland
 scots
 scotsman
 scotsmen
-scott
-scottie
-scotties
 scottish
 scoundrel
 scoundrelly
@@ -83799,8 +83790,6 @@ shopboy
 shopboys
 shopbreaker
 shope
-shopgirl
-shopgirls
 shopkeeper
 shopkeepers
 shoplift
@@ -96199,8 +96188,6 @@ trivialities
 triviality
 trivially
 trivium
-trochaic
-trochaics
 troche
 trochee
 trochees
