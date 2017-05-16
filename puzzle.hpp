@@ -11,6 +11,7 @@
 #include <list>
 #include <tuple>
 #include <bitset>
+#include <deque>
 #include <tbb/tbb.h>
 
 #include "wordcache.hpp"
