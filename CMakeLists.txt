@@ -3,12 +3,7 @@ project( puzzle )
 
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wpedantic -Werror -O6 -fno-exceptions"  )
 
-set( SOURCES 
-    grid.cpp
-    main.cpp
-    puzzle.cpp
-    wordcache.cpp
-)
-
-add_executable( puzzle ${SOURCES} )
+add_executable( puzzle grid.cpp main.cpp puzzle.cpp wordcache.cpp )
 target_link_libraries( puzzle pthread tbb )
+
+add_executable( analyse analyse.cpp )

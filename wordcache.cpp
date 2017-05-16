@@ -65,6 +65,8 @@ wordcache::wordcache( std::string const & file, std::vector< wordhint > const & 
 
 	std::list< std::string > char_pairings;
 
+
+    // Build all possible character combinations based on letter grid
 	{
 		char buf[ 2 ];
 		for ( auto const & i : uniqueLetters )
@@ -80,6 +82,9 @@ wordcache::wordcache( std::string const & file, std::vector< wordhint > const & 
 
 	std::cout << char_pairings.size() << " possible char pairings" << std::endl;
 
+    // now see if these char pairings can be found in the list of words we've recovered.
+    // if not, then they are illegal and will be used to decide whether to 
+    // continue searching
 	for ( auto it = char_pairings.begin() ; it != char_pairings.end() ; )
 	{
 		bool found = false;
