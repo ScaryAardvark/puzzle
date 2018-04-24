@@ -2,8 +2,12 @@
 
 #include <string>
 #include <vector>
+#include <unordered_set>
+#include <tuple>
 
 #include "wordhint.hpp"
+
+size_t hash_value( std::tuple< char, char > const & t );
 
 class wordcache
 {
@@ -19,7 +23,18 @@ public:
 	bool canBeginWith( std::string const & word ) const throw();
 
 private:
-	std::vector< std::string >  _words;
-	std::set< std::tuple< char, char > > _illegal_char_pairings;
+
+    struct key_hash : public std::unary_function< std::tuple< char, char >, std::size_t>
+    {
+        std::size_t operator()( std::tuple< char, char > const & k ) const
+        {
+            return std::get< 0 >( k ) * 26 + std::get< 1 >( k ) ;
+        }
+    };
+
+	std::vector< std::string >                                  _words;
+	std::unordered_set< std::tuple< char, char >, key_hash >    _illegal_char_pairings;
+
+    std::array< char, 676 > _pairingsInUse;
 };
 

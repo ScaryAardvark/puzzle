@@ -1,11 +1,12 @@
 #include <iostream>
+#include <numeric>
 #include <fstream>
-#include <set>
 #include <algorithm>
-#include <list>
+#include <deque>
 #include <cstring>
 
 #include "wordcache.hpp"
+
 
 wordcache::wordcache( std::string const & file, std::vector< wordhint > const & hints, std::string const & letters, std::string const & excludefile )
 {
@@ -27,7 +28,7 @@ wordcache::wordcache( std::string const & file, std::vector< wordhint > const & 
 	std::string uniqueLetters;
 
 	{
-		std::set< char > chars;
+		std::unordered_set< char > chars;
 		for ( auto const & c : letters )
 			chars.insert( c );
 
@@ -35,8 +36,7 @@ wordcache::wordcache( std::string const & file, std::vector< wordhint > const & 
 			uniqueLetters.push_back( c );
 	}
 
-	std::cout << uniqueLetters.size() << " unique letters" << std::endl;
-	std::cout << "	";
+	std::cout << uniqueLetters.size() << " unique letters : ";
 	for ( auto const & c : uniqueLetters )
 		std::cout << c << " ";
 	std::cout << std::endl;
@@ -63,7 +63,24 @@ wordcache::wordcache( std::string const & file, std::vector< wordhint > const & 
 		std::sort( _words.begin(), _words.end() );
 	}
 
-	std::list< std::string > char_pairings;
+	std::deque< std::string > char_pairings;
+
+    // we now do some analysis of words and the letters in the grid
+    // searching for letter pairings, i.e. if  a combination of
+    // two letters from the unique letters isn't found in the words then
+    // we get rid of that char pairing as an optimisation. The search
+    // algorithm knows which letter it's currently "on" and the next
+    // letter it's proposing to search next. if the two pair combinations
+    // aren't possible then we can reject that search.
+    //
+    // for example.
+    //
+    // say we have a unique set of letters : uhovnalwetirgsc
+    // we produce a large set of possible char pairings, i.e. uh, wn, og
+    // we then search all the words and see if those char pairings exist.
+    // if the char pairing exists, i.e. it's possible that a word could be
+    // chosen with it. then we remember it and allow it to be chosen
+    // by the search
 
 
     // Build all possible character combinations based on letter grid
@@ -82,10 +99,17 @@ wordcache::wordcache( std::string const & file, std::vector< wordhint > const & 
 
 	std::cout << char_pairings.size() << " possible char pairings" << std::endl;
 
+    _pairingsInUse.fill( 2 );   // fill with 2 to indicate that this char pairing wasn't even considered
+
     // now see if these char pairings can be found in the list of words we've recovered.
     // if not, then they are illegal and will be used to decide whether to 
     // continue searching
-	for ( auto it = char_pairings.begin() ; it != char_pairings.end() ; )
+    //
+    // Note. there are 676 possible 2 character pairings (26^2)
+    // for speed we'll use a std::array< char >( 676 ) as flags
+    // ( we could use bitset but it'd be slightly slower due to the arithmetic involved )
+    //
+	for ( auto it = char_pairings.begin() ; it != char_pairings.end() ; ++it )
 	{
 		bool found = false;
 
@@ -100,20 +124,28 @@ wordcache::wordcache( std::string const & file, std::vector< wordhint > const & 
 			}
 		}
 
+        std::size_t idx = ( ( (*it)[ 0 ] - 'a' ) * 26 ) + ( (*it)[ 1 ] - 'a' );
 		if ( found )
-			char_pairings.erase( it++ );
-		else
-			++it;
+        {
+            _pairingsInUse[ idx ] = 1;  // mark this as a legal char pairing
+        }
+        else
+        {
+            _pairingsInUse[ idx ] = 0;  // mark this as considered, but not found
+        }
 	}
 
-	for ( auto const & cp : char_pairings )
-		_illegal_char_pairings.insert( std::make_tuple( cp[ 0 ], cp[ 1 ] ) );
+    std::cout << std::accumulate( _pairingsInUse.begin(), _pairingsInUse.end(), std::size_t{0}, []( std::size_t c1, char c2 ) { return c1 + ( ( c2 == 1 ) ? 1 : 0 ); } ) << " char pairings found in available words" << std::endl;
 
-	std::cout << _illegal_char_pairings.size() << " illegal char pairings" << std::endl;
-	std::cout << "	";
-	for ( auto const & cp : _illegal_char_pairings )
-		std::cout << std::get< 0 >( cp ) << std::get< 1 >( cp ) << " ";
-	std::cout << std::endl;
+    std::cout << "These pairings were rejected : ";
+    for ( std::size_t p{ 0 } ; p < _pairingsInUse.size() ; ++p )
+    {
+        if ( _pairingsInUse[ p ] == 0 )
+        {
+            std::cout << (char)( ( p / 26 ) + 'a' ) << (char)( ( p % 26 ) + 'a' ) << " ";
+        }
+    }
+    std::cout << std::endl;
 
 	// can't remove hints until now as they must participate in char_pairing analysis
 	for ( auto const & h : hints )
@@ -125,7 +157,7 @@ wordcache::wordcache( std::string const & file, std::vector< wordhint > const & 
 
 bool wordcache::isValidCharPairing( char c1, char c2 ) const throw()
 {
-	return _illegal_char_pairings.find( std::make_tuple( c1, c2 ) ) == _illegal_char_pairings.end();
+	return _pairingsInUse[ ( ( c1 - 'a' ) * 26 ) + ( c2 - 'a' ) ] == 1;
 }
 
 std::size_t wordcache::size() const throw()
