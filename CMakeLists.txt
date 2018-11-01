@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.2 )
+cmake_minimum_required( VERSION 2.8 )
 project( puzzle )
 
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wpedantic -Werror -O6 -fno-exceptions"  )
