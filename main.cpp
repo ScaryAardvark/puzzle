@@ -77,6 +77,7 @@ int main( int c, char *v[] )
     std::size_t height( std::atoi( args[ 0 ].c_str() ) );
     std::size_t width( std::atoi( args[ 1 ].c_str() ) );
     std::string letters( args[ 2 ] );
+    std::transform( letters.begin(), letters.end(), letters.begin(), ::tolower );
 
     if ( (height * width) > MAX_BITS )
     {
@@ -111,6 +112,7 @@ int main( int c, char *v[] )
                 }
 
                 std::string w( args[ s ] );
+                std::transform( w.begin(), w.end(), w.begin(), ::tolower );
 
                 val = w.size();
 

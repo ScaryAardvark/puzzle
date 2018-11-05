@@ -25,16 +25,10 @@ wordcache::wordcache( std::string const & file, std::vector< wordhint > const & 
 		std::sort( excluded.begin(), excluded.end() );
 	}
 
-	std::string uniqueLetters;
+	std::string uniqueLetters( letters );
 
-	{
-		std::unordered_set< char > chars;
-		for ( auto const & c : letters )
-			chars.insert( c );
-
-		for ( auto const & c : chars )
-			uniqueLetters.push_back( c );
-	}
+    std::sort( uniqueLetters.begin(), uniqueLetters.end() );
+    uniqueLetters.erase( std::unique( uniqueLetters.begin(), uniqueLetters.end() ), uniqueLetters.end() );
 
 	std::cout << uniqueLetters.size() << " unique letters : ";
 	for ( auto const & c : uniqueLetters )
@@ -140,7 +134,7 @@ wordcache::wordcache( std::string const & file, std::vector< wordhint > const & 
     std::cout << "These pairings were rejected : ";
     for ( std::size_t p{ 0 } ; p < _pairingsInUse.size() ; ++p )
     {
-        if ( _pairingsInUse[ p ] == 0 )
+        if ( _pairingsInUse[ p ] != 1 )
         {
             std::cout << (char)( ( p / 26 ) + 'a' ) << (char)( ( p % 26 ) + 'a' ) << " ";
         }
