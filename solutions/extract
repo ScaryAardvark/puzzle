@@ -1,0 +1,49 @@
+#!/bin/bash
+
+cat $1 |
+    sed '/<div class="quest">/,/<a href="\/en\/" class="btn btn-primary">/!d;/<a href="\/en\/" class="btn btn-primary">/q' |
+    sed '/<span class="letterblock">/,/<span class="solution">/!d' |
+    sed 's/.*<span class="letterblock">/\nSTART\n/g' |
+    sed 's/<span class="solution">\(.*\)<\/span>/\nSOLUTION \1\nEND\n/' |
+    sed '/SOLUTION.*/{s/<br \/>//g}' |
+    sed '/SOLUTION.*/{s/,/ /g}' |
+    sed '/START/,/END/!d' |
+    sed 's/<span>//g;s/<\/span>//g' |
+    sed '/^\s\+$/d' |
+awk '
+
+/START/ {
+    inside = 1
+    row = 0
+    line = 0
+    letters=""
+    solution = ""
+    next
+}
+
+/END/ {
+    inside = 0
+}
+
+/SOLUTION.*/ {
+    hints = ""
+    for ( i = 2 ; i <= NF ; ++i )
+    {
+        hints = hints " " length( $i )
+        solution = solution " " $i
+    }
+    printf( "puzzle %d %d %s %s\n", row, ( line ) / row , letters, hints )
+    printf( "# solution %s\n", solution )
+}
+
+/<br \/>/ {
+    row = row + 1
+}
+
+inside == 1 {
+    line = line + 1
+    letters = letters substr( $1, 1, 1 )
+}
+
+
+'
